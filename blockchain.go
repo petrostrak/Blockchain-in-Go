@@ -37,7 +37,7 @@ func (b *Block) MarshalJSON() ([]byte, error) {
 }
 
 func (b *Block) Hash() [32]byte {
-	m, err := json.Marshal(b)
+	m, err := b.MarshalJSON()
 	if err != nil {
 		fmt.Println(err)
 	}
