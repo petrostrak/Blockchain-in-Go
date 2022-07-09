@@ -93,3 +93,22 @@ func (bc *Blockchain) Mining() bool {
 
 	return true
 }
+
+func (bc *Blockchain) CalculateTotalAmout(blockchainAddress string) (total float32) {
+	total = 0.0
+
+	for _, b := range bc.chain {
+		for _, t := range b.transactions {
+			value := t.value
+			if blockchainAddress == t.recipientBlockchainAddress {
+				total += value
+			}
+
+			if blockchainAddress == t.sendersBlockchainAddress {
+				total -= value
+			}
+		}
+	}
+
+	return
+}
