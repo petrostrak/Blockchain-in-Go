@@ -9,23 +9,16 @@ func init() {
 }
 
 func main() {
-	blockChain := NewBlockchain()
+	myBlockChanAddress := "my_blockchain_address"
+	blockChain := NewBlockchain(myBlockChanAddress)
 	blockChain.Print()
 
 	blockChain.AddTransaction("A", "B", 1.0)
-	previousHash := blockChain.LastBlock().Hash()
-
-	nonce := blockChain.ProofOfWork()
-
-	blockChain.CreateBlock(nonce, previousHash)
+	blockChain.Mining()
 	blockChain.Print()
 
 	blockChain.AddTransaction("C", "D", 2.0)
 	blockChain.AddTransaction("X", "Y", 3.0)
-	previousHash = blockChain.LastBlock().Hash()
-
-	nonce = blockChain.ProofOfWork()
-
-	blockChain.CreateBlock(nonce, previousHash)
+	blockChain.Mining()
 	blockChain.Print()
 }
