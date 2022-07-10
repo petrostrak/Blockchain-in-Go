@@ -6,6 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"log"
+
+	"github.com/petrostrak/Blockchain-in-Go/utils"
 )
 
 type Transaction struct {
@@ -38,7 +40,7 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (t *Transaction) GenerateSignature() *Signature {
+func (t *Transaction) GenerateSignature() *utils.Signature {
 	m, err := json.Marshal(t)
 	if err != nil {
 		log.Println(err)
@@ -51,5 +53,5 @@ func (t *Transaction) GenerateSignature() *Signature {
 		log.Println(err)
 	}
 
-	return &Signature{r, s}
+	return &utils.Signature{r, s}
 }
