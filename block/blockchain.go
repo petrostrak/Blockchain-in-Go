@@ -1,9 +1,14 @@
 package block
 
 import (
+	"crypto/ecdsa"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/petrostrak/Blockchain-in-Go/utils"
 )
 
 const (
@@ -51,6 +56,17 @@ func (bc *Blockchain) Print() {
 func (bc *Blockchain) AddTransaction(sender, recipient string, value float32) {
 	t := NewTransaction(sender, recipient, value)
 	bc.transactionPool = append(bc.transactionPool, t)
+}
+
+func (bc *Blockchain) VerifyTransactionSignature(senderPublicKey *ecdsa.PublicKey, s *utils.Signature, t *Transaction) bool {
+	m, err := json.Marshal(t)
+	if err != nil {
+		log.Println(err)
+	}
+
+	h := sha256.Sum256([]byte(m))
+
+	return ecdsa.Verify(senderPublicKey, h[:], s.R, s.S)
 }
 
 func (bc *Blockchain) CopyTransactionPool() []*Transaction {
