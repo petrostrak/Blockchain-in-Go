@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	TEMP_DIR = "wallet-server/templates"
+	TEMP_DIR = "templates"
 )
 
 type WalletServer struct {
