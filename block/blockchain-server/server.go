@@ -32,8 +32,8 @@ func (bs *BlockchainServer) GetBlockchain() *block.Blockchain {
 		minersWallet := wallet.NewWallet()
 		bc = block.NewBlockchain(minersWallet.BlockchainAddress(), bs.Port())
 		cache["blockchain"] = bc
-		log.Printf("private_key %v\n", minersWallet.PrivateKey())
-		log.Printf("public_key %v\n", minersWallet.PublicKey())
+		log.Printf("private_key %v\n", minersWallet.PrivateKeyStr())
+		log.Printf("public_key %v\n", minersWallet.PublicKeyStr())
 		log.Printf("blockchain_address %v\n", minersWallet.BlockchainAddress())
 	}
 
