@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"html/template"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/petrostrak/Blockchain-in-Go/block"
 	"github.com/petrostrak/Blockchain-in-Go/utils"
 	"github.com/petrostrak/Blockchain-in-Go/wallet"
 )
@@ -72,7 +74,7 @@ func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, r *http.Request
 	switch r.Method {
 	case http.MethodPost:
 		decoder := json.NewDecoder(r.Body)
-		var t wallet.TreansactionRequest
+		var t wallet.TransactionRequest
 		err := decoder.Decode(&t)
 		if err != nil {
 			log.Printf("[ERROR]: could not decode: %v\n", err)
@@ -98,6 +100,38 @@ func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, r *http.Request
 		value32 := float32(value)
 
 		w.Header().Add("Content-Type", "application/json")
+
+		transaction := wallet.NewTransaction(privateKey, publicKey, *t.SenderBlockchainAddress, *t.RecipientBlockchainAddress, value32)
+		signature := transaction.GenerateSignature()
+		signatureStr := signature.String()
+
+		bt := &block.TransactionRequest{
+			t.SenderBlockchainAddress,
+			t.RecipientBlockchainAddress,
+			t.SenderPublicKey,
+			&value32,
+			&signatureStr,
+		}
+
+		m, err := json.Marshal(bt)
+		if err != nil {
+			log.Println("[ERROR]: failed to marshal transaction request")
+			io.WriteString(w, string(utils.JSONStatus("fail")))
+			return
+		}
+
+		buf := bytes.NewBuffer(m)
+
+		resp, err := http.Post(ws.Gateway()+"/transactions", "application/json", buf)
+		if err != nil {
+			log.Println(err)
+		}
+		if resp.StatusCode == 201 {
+			io.WriteString(w, string(utils.JSONStatus("success")))
+			return
+		}
+		log.Println("[ERROR]: could not post to transactions")
+		io.WriteString(w, string(utils.JSONStatus("fail")))
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 		log.Printf("[ERROR]: Invalid request method: %v\n", r.Method)
