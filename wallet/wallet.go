@@ -97,3 +97,19 @@ func (w *Wallet) MarshalJSON() ([]byte, error) {
 		BlockchainAddress: w.BlockchainAddress(),
 	})
 }
+
+type TreansactionRequest struct {
+	SenderPrivateKey          *string `json:"sender_private_key"`
+	SenderBlockchainAddres    *string `json:"sender_blockchain_address"`
+	RecipientBlockchainAddres *string `json:"recipient_blochchain_address"`
+	SenderPublicKey           *string `json:"sender_public_key"`
+	Value                     *string `json:"value"`
+}
+
+func (tr *TreansactionRequest) Validate() bool {
+	return tr.SenderPrivateKey == nil ||
+		tr.SenderBlockchainAddres == nil ||
+		tr.RecipientBlockchainAddres == nil ||
+		tr.SenderPublicKey == nil ||
+		tr.Value == nil
+}

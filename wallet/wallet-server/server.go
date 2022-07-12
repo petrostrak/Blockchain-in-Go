@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"html/template"
 	"io"
 	"log"
@@ -70,11 +71,21 @@ func (ws *WalletServer) Wallet(w http.ResponseWriter, r *http.Request) {
 func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		msg, err := utils.JSONStatus("success")
+		decoder := json.NewDecoder(r.Body)
+		var t wallet.TreansactionRequest
+		err := decoder.Decode(&t)
 		if err != nil {
-			log.Println(err)
+			log.Printf("[ERROR]: could not decode: %v\n", err)
+			io.WriteString(w, string(utils.JSONStatus("fail")))
+			return
 		}
-		io.WriteString(w, string(msg))
+
+		if !t.Validate() {
+			log.Println("[ERROR]: missing fields")
+			io.WriteString(w, string(utils.JSONStatus("fail")))
+			return
+		}
+
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 		log.Printf("[ERROR]: Invalid request method: %v\n", r.Method)
