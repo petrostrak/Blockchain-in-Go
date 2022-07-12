@@ -86,6 +86,18 @@ func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, r *http.Request
 			return
 		}
 
+		publicKey := utils.PublicKeyFromString(*t.SenderPublicKey)
+		privateKey := utils.PrivateKeyFromString(*t.SenderPrivateKey, publicKey)
+		value, err := strconv.ParseFloat(*t.Value, 32)
+		if err != nil {
+			log.Println("[ERROR]: parse failed")
+			io.WriteString(w, string(utils.JSONStatus("fail")))
+			return
+		}
+
+		value32 := float32(value)
+
+		w.Header().Add("Content-Type", "application/json")
 	default:
 		w.WriteHeader(http.StatusBadRequest)
 		log.Printf("[ERROR]: Invalid request method: %v\n", r.Method)
