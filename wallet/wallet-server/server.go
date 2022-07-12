@@ -8,6 +8,7 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/petrostrak/Blockchain-in-Go/utils"
 	"github.com/petrostrak/Blockchain-in-Go/wallet"
 )
 
@@ -66,8 +67,23 @@ func (ws *WalletServer) Wallet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		msg, err := utils.JSONStatus("success")
+		if err != nil {
+			log.Println(err)
+		}
+		io.WriteString(w, string(msg))
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("[ERROR]: Invalid request method: %v\n", r.Method)
+	}
+}
+
 func (ws *WalletServer) Run() {
 	http.HandleFunc("/", ws.Index)
 	http.HandleFunc("/wallet", ws.Wallet)
+	http.HandleFunc("/transaction", ws.CreateTransaction)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(int(ws.Port())), nil))
 }
