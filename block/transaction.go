@@ -48,9 +48,12 @@ type TransactionRequest struct {
 }
 
 func (tr *TransactionRequest) Validate() bool {
-	return tr.SenderBlockchainAddress == nil ||
+	if tr.SenderBlockchainAddress == nil ||
 		tr.RecipientBlockchainAddress == nil ||
 		tr.SenderPublicKey == nil ||
 		tr.Value == nil ||
-		tr.Signature == nil
+		tr.Signature == nil {
+		return false
+	}
+	return true
 }
