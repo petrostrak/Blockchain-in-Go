@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -138,9 +139,63 @@ func (ws *WalletServer) CreateTransaction(w http.ResponseWriter, r *http.Request
 	}
 }
 
+func (ws *WalletServer) WalletAmount(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		blockchainAddress := r.URL.Query().Get("blockchain_address")
+		entpoint := fmt.Sprintf("%s/amount", ws.Gateway())
+
+		client := &http.Client{}
+		bsReq, _ := http.NewRequest("GET", entpoint, nil)
+		q := bsReq.URL.Query()
+		q.Add("blockchain_address", blockchainAddress)
+		bsReq.URL.RawQuery = q.Encode()
+
+		bsResp, err := client.Do(bsReq)
+		if err != nil {
+			log.Printf("[ERROR]: unable to send request: %v\n", err)
+			io.WriteString(w, string(utils.JSONStatus("fail")))
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		if bsResp.StatusCode == 200 {
+			decoder := json.NewDecoder(bsResp.Body)
+			var bar block.AmountResponse
+			err := decoder.Decode(&bar)
+			if err != nil {
+				log.Printf("[ERROR]: unable to decode to amount respose: %v\n", err)
+				io.WriteString(w, string(utils.JSONStatus("fail")))
+				return
+			}
+
+			m, err := json.Marshal(struct {
+				Message string  `json:"message"`
+				Amount  float32 `json:"amount"`
+			}{
+				Message: "success",
+				Amount:  bar.Amount,
+			})
+			if err != nil {
+				log.Printf("[ERROR]: unable to marshal amount: %v\n", err)
+				io.WriteString(w, string(utils.JSONStatus("fail")))
+				return
+			}
+			io.WriteString(w, string(m))
+		} else {
+			io.WriteString(w, string(utils.JSONStatus("fail")))
+		}
+
+	default:
+		log.Printf("[ERROR]: Invalid request method: %v\n", r.Method)
+		w.WriteHeader(http.StatusBadRequest)
+	}
+}
+
 func (ws *WalletServer) Run() {
 	http.HandleFunc("/", ws.Index)
 	http.HandleFunc("/wallet", ws.Wallet)
+	http.HandleFunc("/wallet/amount", ws.WalletAmount)
 	http.HandleFunc("/transaction", ws.CreateTransaction)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(int(ws.Port())), nil))
 }
