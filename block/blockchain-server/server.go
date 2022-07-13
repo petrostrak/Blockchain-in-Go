@@ -133,9 +133,25 @@ func (bs *BlockchainServer) Mine(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (bs *BlockchainServer) StartMine(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		bc := bs.GetBlockchain()
+		bc.StartMining()
+
+		m := utils.JSONStatus("success")
+		w.Header().Add("Content-Type", "application/json")
+		io.WriteString(w, string(m))
+	default:
+		log.Printf("[ERROR]: Invalid request method: %v\n", r.Method)
+		w.WriteHeader(http.StatusBadRequest)
+	}
+}
+
 func (bs *BlockchainServer) Run() {
 	http.HandleFunc("/", bs.GetChain)
 	http.HandleFunc("/transactions", bs.Transactions)
 	http.HandleFunc("/mine", bs.Mine)
+	http.HandleFunc("/mine/start", bs.StartMine)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(int(bs.Port())), nil))
 }
