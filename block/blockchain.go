@@ -48,6 +48,10 @@ func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
 	return bc
 }
 
+func (bc *Blockchain) Chain() []*Block {
+	return bc.chain
+}
+
 func (bc *Blockchain) SetNeighbors() {
 	bc.neighbors = utils.FindNeighbor(
 		utils.GetHost(), bc.port,
@@ -304,4 +308,44 @@ func (bc *Blockchain) ValidChain(chain []*Block) bool {
 	}
 
 	return true
+}
+
+func (bc *Blockchain) ResolveConflicts() bool {
+	var longestChain []*Block = nil
+	maxLength := len(bc.chain)
+
+	for _, n := range bc.neighbors {
+		endpoint := fmt.Sprintf("http://%s/chain", n)
+		resp, err := http.Get(endpoint)
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+
+		if resp.StatusCode == 200 {
+			var bcResp Blockchain
+			decoder := json.NewDecoder(resp.Body)
+			err := decoder.Decode(&bcResp)
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+
+			chain := bcResp.Chain()
+
+			if len(chain) > maxLength && bc.ValidChain(chain) {
+				maxLength = len(chain)
+				longestChain = chain
+			}
+		}
+	}
+
+	if longestChain != nil {
+		bc.chain = longestChain
+		log.Println("Resolve conflicts replaced")
+		return true
+	}
+
+	log.Println("Resolve conflicts not replaced")
+	return false
 }
