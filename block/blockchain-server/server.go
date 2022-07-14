@@ -106,6 +106,35 @@ func (bs *BlockchainServer) Transactions(w http.ResponseWriter, r *http.Request)
 		}
 
 		io.WriteString(w, string(m))
+	case http.MethodPut:
+		decoder := json.NewDecoder(r.Body)
+		var t *block.TransactionRequest
+		err := decoder.Decode(&t)
+		if err != nil {
+			log.Printf("[ERROR]: %v\n", err)
+			return
+		}
+		if !t.Validate() {
+			log.Println("[ERROR]: missing field(s)")
+			io.WriteString(w, string(utils.JSONStatus("fail")))
+			return
+		}
+
+		publicKey := utils.PublicKeyFromString(*t.SenderPublicKey)
+		signature := utils.SignatureFromString(*t.Signature)
+		bc := bs.GetBlockchain()
+		isUpdated := bc.AddTransaction(*t.SenderBlockchainAddress, *t.RecipientBlockchainAddress, *t.Value, publicKey, signature)
+
+		w.Header().Add("Content-Type", "application/json")
+		var m []byte
+		if !isUpdated {
+			w.WriteHeader(http.StatusBadRequest)
+			m = utils.JSONStatus("fail")
+		} else {
+			m = utils.JSONStatus("success")
+		}
+
+		io.WriteString(w, string(m))
 	default:
 		log.Printf("[ERROR]: Invalid request method: %v\n", r.Method)
 		w.WriteHeader(http.StatusBadRequest)
