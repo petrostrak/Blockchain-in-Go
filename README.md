@@ -21,7 +21,7 @@ Access a wallet in
 http://localhost:8000/
 ```
 
-The wallet prepopulates the public and private keys of the user as well as blockchain 
+The wallet prepopulates the public and private keys of the user as well as the blockchain 
 address. To send crypto to another wallet, simply fire up another wallet tab and
 use the recipients address to send the desired amount.
 
