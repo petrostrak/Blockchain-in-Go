@@ -82,10 +82,24 @@ func (bc *Blockchain) ClearTransactionPool() {
 
 func (bc *Blockchain) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Blocks []*Block `json:"chains"`
+		Blocks []*Block `json:"chain"`
 	}{
 		Blocks: bc.chain,
 	})
+}
+
+func (bc *Blockchain) UnmarshalJSON(data []byte) error {
+	v := &struct {
+		Blocks *[]*Block `json:"chain"`
+	}{
+		Blocks: &bc.chain,
+	}
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (bc *Blockchain) CreateBlock(nonce int, previousHash [32]byte) *Block {
@@ -203,7 +217,7 @@ func (bc *Blockchain) CopyTransactionPool() []*Transaction {
 
 	for _, t := range bc.transactionPool {
 		transactions = append(transactions,
-			NewTransaction(t.sendersBlockchainAddress, t.recipientBlockchainAddress, t.value))
+			NewTransaction(t.senderBlockchainAddress, t.recipientBlockchainAddress, t.value))
 	}
 
 	return transactions
@@ -262,7 +276,7 @@ func (bc *Blockchain) CalculateTotalAmout(blockchainAddress string) (total float
 				total += value
 			}
 
-			if blockchainAddress == t.sendersBlockchainAddress {
+			if blockchainAddress == t.senderBlockchainAddress {
 				total -= value
 			}
 		}
