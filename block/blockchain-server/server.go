@@ -169,6 +169,8 @@ func (bs *BlockchainServer) Amount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (bs *BlockchainServer) Run() {
+	bs.GetBlockchain().Run()
+
 	http.HandleFunc("/", bs.GetChain)
 	http.HandleFunc("/transactions", bs.Transactions)
 	http.HandleFunc("/mine", bs.Mine)
