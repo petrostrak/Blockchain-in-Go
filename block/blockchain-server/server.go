@@ -135,6 +135,10 @@ func (bs *BlockchainServer) Transactions(w http.ResponseWriter, r *http.Request)
 		}
 
 		io.WriteString(w, string(m))
+	case http.MethodDelete:
+		bc := bs.GetBlockchain()
+		bc.ClearTransactionPool()
+		io.WriteString(w, string(utils.JSONStatus("success")))
 	default:
 		log.Printf("[ERROR]: Invalid request method: %v\n", r.Method)
 		w.WriteHeader(http.StatusBadRequest)

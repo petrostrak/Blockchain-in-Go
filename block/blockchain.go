@@ -1,11 +1,13 @@
 package block
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -74,6 +76,10 @@ func (bc *Blockchain) TransactionPool() []*Transaction {
 	return bc.transactionPool
 }
 
+func (bc *Blockchain) ClearTransactionPool() {
+	bc.transactionPool = bc.transactionPool[:0]
+}
+
 func (bc *Blockchain) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		Blocks []*Block `json:"chains"`
@@ -86,6 +92,22 @@ func (bc *Blockchain) CreateBlock(nonce int, previousHash [32]byte) *Block {
 	b := NewBlock(nonce, previousHash, bc.transactionPool)
 	bc.chain = append(bc.chain, b)
 	bc.transactionPool = []*Transaction{}
+
+	for _, n := range bc.neighbors {
+		endpoint := fmt.Sprintf("http://%s/transactions", n)
+		client := &http.Client{}
+		req, err := http.NewRequest("DELETE", endpoint, nil)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		fmt.Printf("%v\n", resp)
+	}
 
 	return b
 }
@@ -105,6 +127,40 @@ func (bc *Blockchain) Print() {
 
 func (bc *Blockchain) CreateTransaction(sender, recipient string, value float32, senderPublicKey *ecdsa.PublicKey, s *utils.Signature) bool {
 	isTransacted := bc.AddTransaction(sender, recipient, value, senderPublicKey, s)
+
+	if isTransacted {
+		for _, n := range bc.neighbors {
+			publicKeyStr := fmt.Sprintf("%064x%064x", senderPublicKey.X.Bytes(), senderPublicKey.Y.Bytes())
+			signatureStr := s.String()
+			bt := &TransactionRequest{
+				&sender,
+				&recipient,
+				&publicKeyStr,
+				&value,
+				&signatureStr,
+			}
+
+			m, err := json.Marshal(bt)
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+			buf := bytes.NewBuffer(m)
+			endpoint := fmt.Sprintf("http://%s/transactions", n)
+			client := &http.Client{}
+			req, err := http.NewRequest("PUT", endpoint, buf)
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+			fmt.Printf("%v\n", resp)
+		}
+	}
 
 	return isTransacted
 }
